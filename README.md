@@ -7,7 +7,7 @@ Spring Boot Web application to provide REST API in JSON
 ### 1.1. Récupérer les sources
 
 ```
-$ git clone git@github.com:AgileSpirit/TinyBlogApi.git
+$ git clone git@github.com:AgileSpirit/spring-boot-sample.git
 ```
 
 ### 1.2. Lancer l'application
@@ -192,7 +192,7 @@ Lancez l'application :
 2015-04-13 19:56:57.092  INFO 66176 --- [lication.main()] com.acme.app.Application                 : Started Application in 3.064 seconds (JVM running for 6.686)
 ```
 
-### 2.4. Ajouter la librairie Lombok, pour éviter l'écriture de code BoilerPlate
+### 2.4. Ajout de la librairie Lombok, pour éviter l'écriture de code BoilerPlate
 
 Lombok est une lib Java bien pratique qui permet de s'économiser l'écriture de code BoilerPlate tel que : getters,
 setters, méthodes equals / hascode, grâce à l'utilisation d'annotations (`@Data`, `@Getter`, `@Setter`,
@@ -221,7 +221,7 @@ Pour activer la librairie, il faut ajouter dans le fichier Maven pom.xml :
 
 ```
 
-### 2.5 Déclarer notre Modèle du Domaine
+### 2.5 Déclaration du Modèle de Domaine
 
 Notre modèle du domaine sera simple, à savoir, un simple objet Article (en vrai une Entité JPA), avec pour propriétés :
 
@@ -467,10 +467,100 @@ Nous pouvons maintenant implémenter les services restants, mais avant cela, nou
 
 ### 2.8. Tester une application Spring Boot
 
+#### 2.8.1. Ajout des dépendances Maven
 
+Dans le POM Maven, il faut ajouter le start Spring Boot pour Spring Test :
 
+```
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-test</artifactId>
+</dependency>
+```
 
+Nous allons aussi ajouter une autre dépendance, [AssertJ](http://joel-costigliola.github.io/assertj/ "AssertJ"), qui est une librairie Java permettant d'écrire des assertions JUnit de façon courrante (*fluent*).
 
+```
+<dependency>
+    <groupId>org.assertj</groupId>
+    <artifactId>assertj-core</artifactId>
+    <version>2.0.0</version>
+    <scope>test</scope>
+</dependency>
+```
+
+AssertJ permet par exemple d'écrire des assertions de ce type (extrait de la doc officielle) :
+
+```
+assertThat(frodo.getName()).isEqualTo("Frodo");
+
+assertThat(frodo).isNotEqualTo(sauron)
+                 .isIn(fellowshipOfTheRing);
+                 
+assertThat(frodo.getName()).startsWith("Fro")
+                           .endsWith("do")
+                           .isEqualToIgnoringCase("frodo");
+```
+                 
+#### 2.8.2. Tests d'intégration partiel
+
+Pour notre premier test, nous voulons quelque chose de simple, avec un contexte Spring initialisé et l'injection de dépendances réalisée.
+
+Notre premier cas de test consiste à valider que l'injection de dépendances s'effectue bien, ainsi que le traitement `@PostConstruct`.
+
+Pour cela, nous commençons par crééer la classe de test SpringContextTest :
+
+```
+package com.acme.app;
+
+import org.assertj.core.api.Assertions;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.SpringApplicationConfiguration;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+
+import java.util.List;
+
+@RunWith(SpringJUnit4ClassRunner.class)
+@SpringApplicationConfiguration(classes = Application.class)
+public class SpringContextTest {
+
+    @Autowired
+    ArticleRepository articleRepository;
+
+    @Test
+    public void testDependencyInjection() {
+        Assertions.assertThat(articleRepository).isNotNull();
+    }
+
+    @Test
+    public void testInitialize() {
+        List<Article> articles = articleRepository.findAll();
+        Assertions.assertThat(articles).isNotNull().hasSize(3);
+    }
+
+}
+```
+
+L'annotation `@RunWith(SpringJUnit4ClassRunner.class)` indique à JUnit que nos tests s'appuient sur Spring.
+
+L'annotation `@SpringApplicationConfiguration(classes = Application.class)` indique au runner qu'il s'agit d'une application SPring Boot, dont le point d'entrée (qui contient la configuration) est la classe `Application`.
+
+L'annotation `@Autowired` permet de récupèrer depuis le contexte Spring notre `ArticleRepository`.
+
+L'annotation `@Test` indique à JUnit que la méthode décorée est un scénario de test.
+
+Le premier test -- #testDependencyInjection() -- vérifie que l'injection de dépendances est OK. Le second -- #testInitialize() -- vérifie que la méthode `Application#initialize()` a bien été appelée.
+
+Pour lancer le test, il suffit :
+
+- d'exécuter la commande Maven `$ mvn test`
+- ou bien de lancer le test depuis votre IDE (clic-droit sur la classe de test -> "lancer en tant que test JUnit")
+
+#### 2.8.3. Tests d'intégration en mode "bouchon"
+
+#### 2.8.4. Tests d'intégration complet
 
 
 

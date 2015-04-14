@@ -18,7 +18,7 @@ public class Application {
     private ArticleRepository articleRepository;
 
     @PostConstruct
-    public void onStartup() {
+    public void initialize() {
         articleRepository.save(newArticle("Hello world !"));
         articleRepository.save(newArticle("Lorem ipsum dolor sit amet consectetur adipiscing"));
         articleRepository.save(newArticle("Foo Bar Power"));
