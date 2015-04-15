@@ -11,10 +11,10 @@ import java.util.List;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringApplicationConfiguration(classes = Application.class)
-public class SpringContextTest {
+public class SpringConfigurationTest {
 
     @Autowired
-    ArticleRepository articleRepository;
+    private ArticleRepository articleRepository;
 
     @Test
     public void testDependencyInjection() {

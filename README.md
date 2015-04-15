@@ -170,7 +170,7 @@ Lancez l'application :
  =========|_|==============|___/=/_/_/_/
  :: Spring Boot ::        (v1.2.3.RELEASE)
 
-2015-04-13 19:56:54.272  INFO 66176 --- [lication.main()] com.acme.app.Application                 : Starting Application on localhost with PID 66176 (/Users/Works/SpringBootSample/spring-boot-sample/target/classes started by OCTO-JBU in /Users/Works/SpringBootSample/spring-boot-sample)
+2015-04-13 19:56:54.272  INFO 66176 --- [lication.main()] com.acme.app.Application                 : Starting Application on localhost with PID 66176 (/Users/Works/SpringBootSample/spring-boot-sample/target/classes started by jbuget in /Users/Works/SpringBootSample/spring-boot-sample)
 2015-04-13 19:56:54.315  INFO 66176 --- [lication.main()] ationConfigEmbeddedWebApplicationContext : Refreshing org.springframework.boot.context.embedded.AnnotationConfigEmbeddedWebApplicationContext@4485b66d: startup date [Mon Apr 13 19:56:54 CEST 2015]; root of context hierarchy
 2015-04-13 19:56:54.936  INFO 66176 --- [lication.main()] o.s.b.f.s.DefaultListableBeanFactory     : Overriding bean definition for bean 'beanNameViewResolver': replacing [Root bean: class [null]; scope=; abstract=false; lazyInit=false; autowireMode=3; dependencyCheck=0; autowireCandidate=true; primary=false; factoryBeanName=org.springframework.boot.autoconfigure.web.ErrorMvcAutoConfiguration$WhitelabelErrorViewConfiguration; factoryMethodName=beanNameViewResolver; initMethodName=null; destroyMethodName=(inferred); defined in class path resource [org/springframework/boot/autoconfigure/web/ErrorMvcAutoConfiguration$WhitelabelErrorViewConfiguration.class]] with [Root bean: class [null]; scope=; abstract=false; lazyInit=false; autowireMode=3; dependencyCheck=0; autowireCandidate=true; primary=false; factoryBeanName=org.springframework.boot.autoconfigure.web.WebMvcAutoConfiguration$WebMvcAutoConfigurationAdapter; factoryMethodName=beanNameViewResolver; initMethodName=null; destroyMethodName=(inferred); defined in class path resource [org/springframework/boot/autoconfigure/web/WebMvcAutoConfiguration$WebMvcAutoConfigurationAdapter.class]]
 2015-04-13 19:56:55.645  INFO 66176 --- [lication.main()] s.b.c.e.t.TomcatEmbeddedServletContainer : Tomcat initialized with port(s): 8080 (http)
@@ -334,7 +334,7 @@ L'annotation `@Temporal` permet d'indiquer au SGBD que le champ `publicationDate
 
 Les annotations `@Lob` et `@Column` permettent d'associer un type SQL `CLOB` aux attributs concernés.
 
-	Remarque : par défaut, Hibernate se base sur les getters pour faire le mapping Java / SQL. Dans notre cas, les getters sont générés par Lombok au moment de la génération du bytecode.
+Remarque : par défaut, Hibernate se base sur les getters pour faire le mapping Java / SQL. Dans notre cas, les getters sont générés par Lombok au moment de la génération du bytecode.
 
 #### 2.6.3. Déclaration du Repository pour gérer les entités JPA
 
@@ -405,7 +405,7 @@ L'annotation `@RequestMapping`, placé au niveau de la classe, définie le chemi
 
 On retrouve l'annotation `@RequestMapping` au niveau d'une métode cette fois. Elle nous permet de définir plus finement le service exposé (en l'occurence `#getArticles()`). L'argument `method` défini le verbe HTTP associé au service (NDLR : on aurait pu l'ommettre étant donné quel verbe par défaut proposé par Spring MVC est GET), et l'argument `produces` définie le format de la donnée qui sera émise (dans notre cas, de la donnée JSON au format media "application/json").
 
-	Remarque : le fait de définir l'attribut produces va ajouter dans la réponse HTTP le header Content-Type="application/json".
+Remarque : le fait de définir l'attribut produces va ajouter dans la réponse HTTP le header Content-Type="application/json".
 	
 Enfin l'annotation @ResponseBody va signifier à Spring MVC qu'il doit effectuer une transformation JSON de l'objet passé en retour (ici, une liste d'Articles). Si on oulie cette annotation, alors Spring MVC tentera de retourner par défaut une String (au format "text/plain").
 
@@ -508,7 +508,7 @@ Pour notre premier test, nous voulons quelque chose de simple, avec un contexte 
 
 Notre premier cas de test consiste à valider que l'injection de dépendances s'effectue bien, ainsi que le traitement `@PostConstruct`.
 
-Pour cela, nous commençons par crééer la classe de test SpringContextTest :
+Pour cela, nous commençons par crééer la classe de test SpringConfigurationTest :
 
 ```
 package com.acme.app;
@@ -524,10 +524,10 @@ import java.util.List;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringApplicationConfiguration(classes = Application.class)
-public class SpringContextTest {
+public class SpringConfigurationTest {
 
     @Autowired
-    ArticleRepository articleRepository;
+    private ArticleRepository articleRepository;
 
     @Test
     public void testDependencyInjection() {
@@ -545,7 +545,7 @@ public class SpringContextTest {
 
 L'annotation `@RunWith(SpringJUnit4ClassRunner.class)` indique à JUnit que nos tests s'appuient sur Spring.
 
-L'annotation `@SpringApplicationConfiguration(classes = Application.class)` indique au runner qu'il s'agit d'une application SPring Boot, dont le point d'entrée (qui contient la configuration) est la classe `Application`.
+L'annotation `@SpringApplicationConfiguration(classes = Application.class)` indique au runner qu'il s'agit d'une application Spring Boot, dont le point d'entrée (qui contient la configuration) est la classe `Application`. Le runner va se baser sur cette dernière pour charger le contexte Spring.
 
 L'annotation `@Autowired` permet de récupèrer depuis le contexte Spring notre `ArticleRepository`.
 
@@ -558,9 +558,115 @@ Pour lancer le test, il suffit :
 - d'exécuter la commande Maven `$ mvn test`
 - ou bien de lancer le test depuis votre IDE (clic-droit sur la classe de test -> "lancer en tant que test JUnit")
 
-#### 2.8.3. Tests d'intégration en mode "bouchon"
+Vous devriez avoir la *stack trace* suivante :
 
-#### 2.8.4. Tests d'intégration complet
+```
+
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+ :: Spring Boot ::        (v1.2.3.RELEASE)
+
+2015-04-15 09:01:16.032  INFO 70940 --- [           main] c.i.rt.execution.junit.JUnitStarter      : Starting JUnitStarter on localhost with PID 70940 (started by jbuget in /Users/Works/SpringBootSample/spring-boot-sample)
+2015-04-15 09:01:16.070  INFO 70940 --- [           main] s.c.a.AnnotationConfigApplicationContext : Refreshing org.springframework.context.annotation.AnnotationConfigApplicationContext@66b2cd4f: startup date [Wed Apr 15 09:01:16 CEST 2015]; root of context hierarchy
+2015-04-15 09:01:18.261  INFO 70940 --- [           main] j.LocalContainerEntityManagerFactoryBean : Building JPA container EntityManagerFactory for persistence unit 'default'
+2015-04-15 09:01:19.658  INFO 70940 --- [           main] c.i.rt.execution.junit.JUnitStarter      : Started JUnitStarter in 3.909 seconds (JVM running for 4.456)
+2015-04-15 09:01:19.861  INFO 70940 --- [       Thread-1] s.c.a.AnnotationConfigApplicationContext : Closing org.springframework.context.annotation.AnnotationConfigApplicationContext@66b2cd4f: startup date [Wed Apr 15 09:01:16 CEST 2015]; root of context hierarchy
+2015-04-15 09:01:19.865  INFO 70940 --- [       Thread-1] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
+
+Process finished with exit code 0
+```
+
+
+#### 2.8.3. Tests d'intégration complet
+
+Imaginons qu'on veuille à présent tester automatiquement notre application dans des conditions proches du réel, c'est-à-dire comme si elle tournait, par exemple, dans le cadre de tests fonctionnels (Cucumber, JBehave, Fitnesse).
+
+Depuis la version 1.2.1, Spring Boot propose l'annotation `@WebIntegrationTest` qui permet de lancer l'application sur un port (qui peut être spécifié) et d'y accéder.
+
+Remarque : Spring fait bien les choses et met en cache le contexte ainsi que le nécessaire pour ne pas avoir à redémarrer l'application complètement à chaque Test Case ou Test Suite.
+
+Créez la classe `SpringIntegrationTest` suivante :
+
+```
+package com.acme.app;
+
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.test.SpringApplicationConfiguration;
+import org.springframework.boot.test.WebIntegrationTest;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+
+@RunWith(SpringJUnit4ClassRunner.class)
+@SpringApplicationConfiguration(classes = Application.class)
+@WebIntegrationTest("server.port:0")
+public class SpringIntegrationTest {
+
+    private final static Logger LOGGER = LoggerFactory.getLogger(SpringIntegrationTest.class);
+
+    @Value("${local.server.port}")
+    private int port;
+
+    @Test
+    public void testApplication() {
+        LOGGER.info("L'application tourne sur le port : " + port);
+    }
+
+}
+```
+
+Maintenant, si vous exécutez le test, vous devriez avoir une stack trace une peu différente :
+
+```
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+ :: Spring Boot ::        (v1.2.3.RELEASE)
+
+2015-04-15 09:09:08.725  INFO 71016 --- [           main] c.i.rt.execution.junit.JUnitStarter      : Starting JUnitStarter on localhost with PID 71016 (started by jbuget in /Users/Works/SpringBootSample/spring-boot-sample)
+2015-04-15 09:09:08.778  INFO 71016 --- [           main] ationConfigEmbeddedWebApplicationContext : Refreshing org.springframework.boot.context.embedded.AnnotationConfigEmbeddedWebApplicationContext@3f15f21b: startup date [Wed Apr 15 09:09:08 CEST 2015]; root of context hierarchy
+2015-04-15 09:09:09.958  INFO 71016 --- [           main] o.s.b.f.s.DefaultListableBeanFactory     : Overriding bean definition for bean 'beanNameViewResolver': replacing [Root bean: class [null]; scope=; abstract=false; lazyInit=false; autowireMode=3; dependencyCheck=0; autowireCandidate=true; primary=false; factoryBeanName=org.springframework.boot.autoconfigure.web.ErrorMvcAutoConfiguration$WhitelabelErrorViewConfiguration; factoryMethodName=beanNameViewResolver; initMethodName=null; destroyMethodName=(inferred); defined in class path resource [org/springframework/boot/autoconfigure/web/ErrorMvcAutoConfiguration$WhitelabelErrorViewConfiguration.class]] with [Root bean: class [null]; scope=; abstract=false; lazyInit=false; autowireMode=3; dependencyCheck=0; autowireCandidate=true; primary=false; factoryBeanName=org.springframework.boot.autoconfigure.web.WebMvcAutoConfiguration$WebMvcAutoConfigurationAdapter; factoryMethodName=beanNameViewResolver; initMethodName=null; destroyMethodName=(inferred); defined in class path resource [org/springframework/boot/autoconfigure/web/WebMvcAutoConfiguration$WebMvcAutoConfigurationAdapter.class]]
+2015-04-15 09:09:10.764  INFO 71016 --- [           main] trationDelegate$BeanPostProcessorChecker : Bean 'org.springframework.transaction.annotation.ProxyTransactionManagementConfiguration' of type [class org.springframework.transaction.annotation.ProxyTransactionManagementConfiguration$$EnhancerBySpringCGLIB$$adf948e] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+2015-04-15 09:09:10.784  INFO 71016 --- [           main] trationDelegate$BeanPostProcessorChecker : Bean 'transactionAttributeSource' of type [class org.springframework.transaction.annotation.AnnotationTransactionAttributeSource] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+2015-04-15 09:09:10.793  INFO 71016 --- [           main] trationDelegate$BeanPostProcessorChecker : Bean 'transactionInterceptor' of type [class org.springframework.transaction.interceptor.TransactionInterceptor] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+2015-04-15 09:09:10.797  INFO 71016 --- [           main] trationDelegate$BeanPostProcessorChecker : Bean 'org.springframework.transaction.config.internalTransactionAdvisor' of type [class org.springframework.transaction.interceptor.BeanFactoryTransactionAttributeSourceAdvisor] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+2015-04-15 09:09:11.248  INFO 71016 --- [           main] s.b.c.e.t.TomcatEmbeddedServletContainer : Tomcat initialized with port(s): 0 (http)
+2015-04-15 09:09:11.488  INFO 71016 --- [           main] o.apache.catalina.core.StandardService   : Starting service Tomcat
+2015-04-15 09:09:11.490  INFO 71016 --- [           main] org.apache.catalina.core.StandardEngine  : Starting Servlet Engine: Apache Tomcat/8.0.20
+2015-04-15 09:09:11.644  INFO 71016 --- [ost-startStop-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2015-04-15 09:09:11.644  INFO 71016 --- [ost-startStop-1] o.s.web.context.ContextLoader            : Root WebApplicationContext: initialization completed in 2868 ms
+2015-04-15 09:09:12.429  INFO 71016 --- [ost-startStop-1] o.s.b.c.e.ServletRegistrationBean        : Mapping servlet: 'dispatcherServlet' to [/]
+2015-04-15 09:09:12.435  INFO 71016 --- [ost-startStop-1] o.s.b.c.embedded.FilterRegistrationBean  : Mapping filter: 'characterEncodingFilter' to: [/*]
+2015-04-15 09:09:12.435  INFO 71016 --- [ost-startStop-1] o.s.b.c.embedded.FilterRegistrationBean  : Mapping filter: 'hiddenHttpMethodFilter' to: [/*]
+2015-04-15 09:09:13.030  INFO 71016 --- [           main] j.LocalContainerEntityManagerFactoryBean : Building JPA container EntityManagerFactory for persistence unit 'default'
+2015-04-15 09:09:14.415  INFO 71016 --- [           main] s.w.s.m.m.a.RequestMappingHandlerAdapter : Looking for @ControllerAdvice: org.springframework.boot.context.embedded.AnnotationConfigEmbeddedWebApplicationContext@3f15f21b: startup date [Wed Apr 15 09:09:08 CEST 2015]; root of context hierarchy
+2015-04-15 09:09:14.487  INFO 71016 --- [           main] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped "{[/articles],methods=[GET],params=[],headers=[],consumes=[],produces=[application/json],custom=[]}" onto public java.util.List<com.acme.app.Article> com.acme.app.ArticleResource.getArticles()
+2015-04-15 09:09:14.490  INFO 71016 --- [           main] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped "{[/error],methods=[],params=[],headers=[],consumes=[],produces=[text/html],custom=[]}" onto public org.springframework.web.servlet.ModelAndView org.springframework.boot.autoconfigure.web.BasicErrorController.errorHtml(javax.servlet.http.HttpServletRequest)
+2015-04-15 09:09:14.490  INFO 71016 --- [           main] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped "{[/error],methods=[],params=[],headers=[],consumes=[],produces=[],custom=[]}" onto public org.springframework.http.ResponseEntity<java.util.Map<java.lang.String, java.lang.Object>> org.springframework.boot.autoconfigure.web.BasicErrorController.error(javax.servlet.http.HttpServletRequest)
+2015-04-15 09:09:14.524  INFO 71016 --- [           main] o.s.w.s.handler.SimpleUrlHandlerMapping  : Mapped URL path [/**] onto handler of type [class org.springframework.web.servlet.resource.ResourceHttpRequestHandler]
+2015-04-15 09:09:14.525  INFO 71016 --- [           main] o.s.w.s.handler.SimpleUrlHandlerMapping  : Mapped URL path [/webjars/**] onto handler of type [class org.springframework.web.servlet.resource.ResourceHttpRequestHandler]
+2015-04-15 09:09:14.578  INFO 71016 --- [           main] o.s.w.s.handler.SimpleUrlHandlerMapping  : Mapped URL path [/**/favicon.ico] onto handler of type [class org.springframework.web.servlet.resource.ResourceHttpRequestHandler]
+2015-04-15 09:09:14.773  INFO 71016 --- [           main] s.b.c.e.t.TomcatEmbeddedServletContainer : Tomcat started on port(s): 51405 (http)
+2015-04-15 09:09:14.776  INFO 71016 --- [           main] c.i.rt.execution.junit.JUnitStarter      : Started JUnitStarter in 6.401 seconds (JVM running for 7.246)
+2015-04-15 09:09:14.785  INFO 71016 --- [           main] com.acme.app.SpringIntegrationTest       : L'application tourne sur le port : 51405
+2015-04-15 09:09:14.788  INFO 71016 --- [       Thread-1] ationConfigEmbeddedWebApplicationContext : Closing org.springframework.boot.context.embedded.AnnotationConfigEmbeddedWebApplicationContext@3f15f21b: startup date [Wed Apr 15 09:09:08 CEST 2015]; root of context hierarchy
+2015-04-15 09:09:14.795  INFO 71016 --- [       Thread-1] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
+
+Process finished with exit code 0
+```
+
+#### 2.8.4. Tests d'intégration en mode "bouchon"
+
 
 
 
