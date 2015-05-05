@@ -467,6 +467,10 @@ Nous pouvons maintenant implémenter les services restants, mais avant cela, nou
 
 ### 2.8. Tester une application Spring Boot
 
+Une application logicielle est un système complexe faisant intervenir et interagir plusieurs composants entre eux, chacun ayant son domaine de responsabilités et d'actions.
+
+Il existe différentes typologies de tests : unitaires, d'intégration, fonctionnels, etc. Une bonne pratique est d'avoir un harnais de tests riche et si possible, mixant (quite à ce qu'ils se recoupent un peu) les typologies de tests.  
+
 #### 2.8.1. Ajout des dépendances Maven
 
 Dans le POM Maven, il faut ajouter le start Spring Boot pour Spring Test :
@@ -502,13 +506,13 @@ assertThat(frodo.getName()).startsWith("Fro")
                            .isEqualToIgnoringCase("frodo");
 ```
                  
-#### 2.8.2. Tests d'intégration partiel
+#### 2.8.2. Tester un composant géré par Spring
 
 Pour notre premier test, nous voulons quelque chose de simple, avec un contexte Spring initialisé et l'injection de dépendances réalisée.
 
 Notre premier cas de test consiste à valider que l'injection de dépendances s'effectue bien, ainsi que le traitement `@PostConstruct`.
 
-Pour cela, nous commençons par crééer la classe de test SpringConfigurationTest :
+Pour cela, nous commençons par crééer la classe de test ApplicationTest :
 
 ```
 package com.acme.app;
@@ -516,42 +520,49 @@ package com.acme.app;
 import org.assertj.core.api.Assertions;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.SpringApplicationConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.util.List;
 
+import static org.slf4j.LoggerFactory.getLogger;
+
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringApplicationConfiguration(classes = Application.class)
-public class SpringConfigurationTest {
+public class ApplicationTest {
 
     @Autowired
     private ArticleRepository articleRepository;
 
+    @Autowired
+    private ArticleResource articleResource;
+
     @Test
     public void testDependencyInjection() {
         Assertions.assertThat(articleRepository).isNotNull();
+        Assertions.assertThat(articleResource).isNotNull();
     }
 
     @Test
     public void testInitialize() {
-        List<Article> articles = articleRepository.findAll();
+        List<Article> articles = articleResource.getArticles();
         Assertions.assertThat(articles).isNotNull().hasSize(3);
     }
 
 }
 ```
 
-L'annotation `@RunWith(SpringJUnit4ClassRunner.class)` indique à JUnit que nos tests s'appuient sur Spring.
+L'annotation `@RunWith(SpringJUnit4ClassRunner.class)` indique à JUnit que nos tests s'appuient et chargent un contexte Spring.
 
-L'annotation `@SpringApplicationConfiguration(classes = Application.class)` indique au runner qu'il s'agit d'une application Spring Boot, dont le point d'entrée (qui contient la configuration) est la classe `Application`. Le runner va se baser sur cette dernière pour charger le contexte Spring.
+L'annotation `@SpringApplicationConfiguration(classes = Application.class)` indique au runner qu'il s'agit d'une application Spring Boot, dont le point d'entrée (qui contient la configuration) est la classe `Application`. Le runner va alors se baser sur cette dernière pour charger le contexte Spring.
 
-L'annotation `@Autowired` permet de récupèrer depuis le contexte Spring notre `ArticleRepository`.
+L'annotation `@Autowired` permet de récupèrer depuis le contexte Spring les beans `articleRepository` et `articleResource`.
 
 L'annotation `@Test` indique à JUnit que la méthode décorée est un scénario de test.
 
-Le premier test -- #testDependencyInjection() -- vérifie que l'injection de dépendances est OK. Le second -- #testInitialize() -- vérifie que la méthode `Application#initialize()` a bien été appelée.
+Le premier test -- #testDependencyInjection() -- vérifie que l'injection de dépendances est bien réalisée. Le second -- #testInitialize() -- vérifie que la méthode `Application#initialize()` a été appelée avec succès.
 
 Pour lancer le test, il suffit :
 
@@ -561,8 +572,6 @@ Pour lancer le test, il suffit :
 Vous devriez avoir la *stack trace* suivante :
 
 ```
-
-
   .   ____          _            __ _ _
  /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
 ( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
@@ -571,30 +580,171 @@ Vous devriez avoir la *stack trace* suivante :
  =========|_|==============|___/=/_/_/_/
  :: Spring Boot ::        (v1.2.3.RELEASE)
 
-2015-04-15 09:01:16.032  INFO 70940 --- [           main] c.i.rt.execution.junit.JUnitStarter      : Starting JUnitStarter on localhost with PID 70940 (started by jbuget in /Users/Works/SpringBootSample/spring-boot-sample)
-2015-04-15 09:01:16.070  INFO 70940 --- [           main] s.c.a.AnnotationConfigApplicationContext : Refreshing org.springframework.context.annotation.AnnotationConfigApplicationContext@66b2cd4f: startup date [Wed Apr 15 09:01:16 CEST 2015]; root of context hierarchy
-2015-04-15 09:01:18.261  INFO 70940 --- [           main] j.LocalContainerEntityManagerFactoryBean : Building JPA container EntityManagerFactory for persistence unit 'default'
-2015-04-15 09:01:19.658  INFO 70940 --- [           main] c.i.rt.execution.junit.JUnitStarter      : Started JUnitStarter in 3.909 seconds (JVM running for 4.456)
-2015-04-15 09:01:19.861  INFO 70940 --- [       Thread-1] s.c.a.AnnotationConfigApplicationContext : Closing org.springframework.context.annotation.AnnotationConfigApplicationContext@66b2cd4f: startup date [Wed Apr 15 09:01:16 CEST 2015]; root of context hierarchy
-2015-04-15 09:01:19.865  INFO 70940 --- [       Thread-1] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
+2015-05-04 19:40:26.087  INFO 8336 --- [           main] c.i.rt.execution.junit.JUnitStarter      : Starting JUnitStarter on localhost with PID 8336 (started by OCTO-JBU in /Users/OCTO-JBU/Works/AgileSpirit/SpringBootSample/spring-boot-sample)
+2015-05-04 19:40:26.389  INFO 8336 --- [           main] s.c.a.AnnotationConfigApplicationContext : Refreshing org.springframework.context.annotation.AnnotationConfigApplicationContext@27ea3262: startup date [Mon May 04 19:40:26 CEST 2015]; root of context hierarchy
+2015-05-04 19:40:28.591  INFO 8336 --- [           main] j.LocalContainerEntityManagerFactoryBean : Building JPA container EntityManagerFactory for persistence unit 'default'
+2015-05-04 19:40:30.450  INFO 8336 --- [           main] c.i.rt.execution.junit.JUnitStarter      : Started JUnitStarter in 4.733 seconds (JVM running for 5.416)
+2015-05-04 19:40:30.792  INFO 8336 --- [       Thread-1] s.c.a.AnnotationConfigApplicationContext : Closing org.springframework.context.annotation.AnnotationConfigApplicationContext@27ea3262: startup date [Mon May 04 19:40:26 CEST 2015]; root of context hierarchy
+2015-05-04 19:40:30.796  INFO 8336 --- [       Thread-1] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
 
 Process finished with exit code 0
 ```
 
+#### 2.8.3. Tester un Controller REST (avec MockMVC)
 
-#### 2.8.3. Tests d'intégration complet
+Une ressource REST (i.e. un ```Controller``` Spring MVC) est normalement un point d'entrée du système, lequel dépend d'autres composants (Beans Spring).
 
-Imaginons qu'on veuille à présent tester automatiquement notre application dans des conditions proches du réel, c'est-à-dire comme si elle tournait, par exemple, dans le cadre de tests fonctionnels (Cucumber, JBehave, Fitnesse).
+Spring propose (via le module Spring Test) des outils pour facilement tester des controllers, a.k.a. [MockMVC](http://docs.spring.io/spring/docs/current/javadoc-api/org/springframework/test/web/servlet/MockMvc.html).
 
-Depuis la version 1.2.1, Spring Boot propose l'annotation `@WebIntegrationTest` qui permet de lancer l'application sur un port (qui peut être spécifié) et d'y accéder.
-
-Remarque : Spring fait bien les choses et met en cache le contexte ainsi que le nécessaire pour ne pas avoir à redémarrer l'application complètement à chaque Test Case ou Test Suite.
-
-Créez la classe `SpringIntegrationTest` suivante :
+Par exemple, pour tester notre API "GET /articles/" de façon unitaire, sans avoir à lancer toute l'application, il suffit de déclarer la classe ```MockMvcUnitTest``` :
 
 ```
 package com.acme.app;
 
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+public class MockMvcUnitTest {
+
+    @Mock
+    private ArticleRepository articleRepository;
+
+    @InjectMocks
+    private ArticleResource articleResource;
+
+    private MockMvc mockMvc;
+
+    @Before
+    public void setUp() throws Exception {
+        // Préparation de génération des Mock Objects
+        MockitoAnnotations.initMocks(this);
+
+        // Gestion de l'injection de dépendances
+        mockMvc = MockMvcBuilders.standaloneSetup(articleResource).build();
+
+        // Simulation des comportements pour les composants bouchonnés
+        List<Article> articles = new ArrayList<>();
+        articles.add(ArticleFactory.newArticle("Article 1"));
+        articles.add(ArticleFactory.newArticle("Article 2"));
+        articles.add(ArticleFactory.newArticle("Article 3"));
+        Mockito.when(articleRepository.findAll()).thenReturn(articles);
+    }
+
+    @Test
+    public void testGetArticles() throws Exception {
+        mockMvc.perform(get("/articles"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andReturn().getResponse().getContentAsString();
+    }
+
+}
+```
+
+On remarque qu'il n'y a pas besoin de décorer la classe avec une quelconque annotation. On se situe vraiment dans un test unitaire : on veut vérifier le comportement d'un composant, isolé de toutes ses dépendances (via l'annotation ```@InjectMocks```), sur lesquelles on prend la main, via des Mock Objects (```@Mock```).
+
+A noter : MockMVC se base sur [Mockito](http://mockito.org/) pour générer et prendre la main sur les Mock Objects.
+
+
+#### 2.8.4. Tester une application Web avec MockMVC
+
+Nous allons maintenant faire des tests d'intégration un peu plus haut niveau. Nous allons à nouveau tester notre ressource REST, mais dans des conditions proche du Runtime. Autrement dit, nous n'allons plus mocker les composants / dépendances Spring. Pour ce faire, nous allons quand même nous appuyer sur MockMVC qui propose là encore des fonctionnalités adaptées.
+
+Nous allons ainsi crééer la classe ```MockMvcIntegrationTest``` :
+
+```
+package com.acme.app;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.SpringApplicationConfiguration;
+import org.springframework.http.MediaType;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.test.context.web.WebAppConfiguration;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.web.context.WebApplicationContext;
+
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+@RunWith(SpringJUnit4ClassRunner.class)
+@SpringApplicationConfiguration(classes = Application.class)
+@WebAppConfiguration
+public class MockMvcIntegrationTest {
+
+    @Autowired
+    private WebApplicationContext context;
+
+    private MockMvc mockMvc;
+
+    @Before
+    public void setUp() throws Exception {
+        mockMvc = MockMvcBuilders.webAppContextSetup(context).build();
+    }
+
+    @Test
+    public void testGetArticles() throws Exception {
+        mockMvc.perform(get("/articles"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andReturn().getResponse().getContentAsString();
+    }
+
+}
+```
+
+Par rapport au tests précédent, nous devons à nouveau décorer notre classe de test pour indiquer à JUnit que nous allons nous situer dans un contexte Spring.
+
+Par rapport à notre premier test, nous devons ajouter l'annotation ```@WebAppConfiguration``` qui permet à MockMVC de ([faire le lien et d'utiliser le contexte Spring](http://docs.spring.io/spring-boot/docs/current/reference/html/boot-features-testing.html#boot-features-testing-spring-boot-applications)).
+
+	The context loader guesses whether you want to test a web application or not (e.g. with MockMVC) by looking for the @WebIntegrationTest or @WebAppConfiguration annotations. (MockMVC and @WebAppConfiguration are part of spring-test).
+
+On notera par ailleurs, que cette fois nous configurons ```MockMvcBuilders``` sur la base du contexte Spring et plus depuis un bean Spring.
+
+
+#### 2.8.5. Tester avec REST-assured
+
+[REST-assured](https://code.google.com/p/rest-assured/ "REST-assured") est une bibliothèque Java proposant un "fluent DSL" basé sur la syntaxe Gherkin -- given(), when(), then() et and() -- spécialement pensé pour tester des API REST.
+
+Il est possible d'utiliser REST-assured avec Spring MVC pour effectuer (et non pas simuler) des appels REST dans les conditions identiques au Runtime, c'est-à-dire avec l'application finale qui tourne et est accessible.
+
+Pour ce faire, nous allons utiliser l'annotation ```@WebIntegrationTest``` fournie par Spring test et qui permet de lancer l'application comme en live.
+
+Mais avant, nous devons déclarer la dépendance Maven REST-assured dans le fichier POM du projet : 
+
+```
+<dependency>
+    <groupId>com.jayway.restassured</groupId>
+    <artifactId>rest-assured</artifactId>
+    <version>2.4.0</version>
+    <scope>test</scope>
+</dependency>
+```
+
+Nous allons ensuite créée notre classe de test, ``RestAssuredIntegrationTest``` :
+
+```
+package com.acme.app;
+
+import com.jayway.restassured.http.ContentType;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.slf4j.Logger;
@@ -604,12 +754,15 @@ import org.springframework.boot.test.SpringApplicationConfiguration;
 import org.springframework.boot.test.WebIntegrationTest;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
+import static com.jayway.restassured.RestAssured.when;
+import static org.hamcrest.CoreMatchers.containsString;
+
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringApplicationConfiguration(classes = Application.class)
 @WebIntegrationTest("server.port:0")
-public class SpringIntegrationTest {
+public class RestAssuredIntegrationTest {
 
-    private final static Logger LOGGER = LoggerFactory.getLogger(SpringIntegrationTest.class);
+    private final static Logger LOGGER = LoggerFactory.getLogger(RestAssuredIntegrationTest.class);
 
     @Value("${local.server.port}")
     private int port;
@@ -619,55 +772,97 @@ public class SpringIntegrationTest {
         LOGGER.info("L'application tourne sur le port : " + port);
     }
 
+    @Test
+    public void testGetArticles() {
+        when()
+                .get("http://localhost:" + port + "/articles").
+        then()
+                .body(containsString("Hello world !"))
+                .body(containsString("Lorem ipsum dolor sit amet consectetur adipiscing"))
+                .body(containsString("Foo Bar Power"))
+                .assertThat()
+                .statusCode(200)
+                .contentType(ContentType.JSON).
+        extract()
+                .response()
+                .asString();
+    }
+
+
 }
 ```
 
-Maintenant, si vous exécutez le test, vous devriez avoir une stack trace une peu différente :
+L'annotation ```@WebIntegrationTest``` permet de lancer l'application comme en live via un conteneur de servlet embarqué (par défaut Tomcat).
 
+Il est possible de paramétrer le serveur, par exemple avec la propriété ```server.port```. En spécifiant la valeur à "0", nous laissons Spring définir un port aléatoire (par défaut c'est 8080), qu'il est ensuite possible de récupérer via l'attribut annoté de ```@Value("${local.server.port}")```. 
+
+Nous pouvons alors faire un appel en précisant le nom de l'hôte ainsi que le port et l'URI de la ressource testée.
+
+#### 2.8.6. Tester avec REST-assured et MockMVC
+
+REST-assured et MockMVC peuvent être utilisés de façon complémentaire, par exemple pour tester une API en bénéficiant de la syntaxe Gherkin et des assertions proposées par REST-assured, tout en bouchonnant les dépendances Spring de l'API testée (et donc en n'ayant plus à charger et lancer toute une application Spring Boot).
+
+Par exemple, nous allons créer la classe ```RestAssuredMockMvcTest``` suivante :
+ 
 ```
-  .   ____          _            __ _ _
- /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
-( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
- \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
-  '  |____| .__|_| |_|_| |_\__, | / / / /
- =========|_|==============|___/=/_/_/_/
- :: Spring Boot ::        (v1.2.3.RELEASE)
+package com.acme.app;
 
-2015-04-15 09:09:08.725  INFO 71016 --- [           main] c.i.rt.execution.junit.JUnitStarter      : Starting JUnitStarter on localhost with PID 71016 (started by jbuget in /Users/Works/SpringBootSample/spring-boot-sample)
-2015-04-15 09:09:08.778  INFO 71016 --- [           main] ationConfigEmbeddedWebApplicationContext : Refreshing org.springframework.boot.context.embedded.AnnotationConfigEmbeddedWebApplicationContext@3f15f21b: startup date [Wed Apr 15 09:09:08 CEST 2015]; root of context hierarchy
-2015-04-15 09:09:09.958  INFO 71016 --- [           main] o.s.b.f.s.DefaultListableBeanFactory     : Overriding bean definition for bean 'beanNameViewResolver': replacing [Root bean: class [null]; scope=; abstract=false; lazyInit=false; autowireMode=3; dependencyCheck=0; autowireCandidate=true; primary=false; factoryBeanName=org.springframework.boot.autoconfigure.web.ErrorMvcAutoConfiguration$WhitelabelErrorViewConfiguration; factoryMethodName=beanNameViewResolver; initMethodName=null; destroyMethodName=(inferred); defined in class path resource [org/springframework/boot/autoconfigure/web/ErrorMvcAutoConfiguration$WhitelabelErrorViewConfiguration.class]] with [Root bean: class [null]; scope=; abstract=false; lazyInit=false; autowireMode=3; dependencyCheck=0; autowireCandidate=true; primary=false; factoryBeanName=org.springframework.boot.autoconfigure.web.WebMvcAutoConfiguration$WebMvcAutoConfigurationAdapter; factoryMethodName=beanNameViewResolver; initMethodName=null; destroyMethodName=(inferred); defined in class path resource [org/springframework/boot/autoconfigure/web/WebMvcAutoConfiguration$WebMvcAutoConfigurationAdapter.class]]
-2015-04-15 09:09:10.764  INFO 71016 --- [           main] trationDelegate$BeanPostProcessorChecker : Bean 'org.springframework.transaction.annotation.ProxyTransactionManagementConfiguration' of type [class org.springframework.transaction.annotation.ProxyTransactionManagementConfiguration$$EnhancerBySpringCGLIB$$adf948e] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
-2015-04-15 09:09:10.784  INFO 71016 --- [           main] trationDelegate$BeanPostProcessorChecker : Bean 'transactionAttributeSource' of type [class org.springframework.transaction.annotation.AnnotationTransactionAttributeSource] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
-2015-04-15 09:09:10.793  INFO 71016 --- [           main] trationDelegate$BeanPostProcessorChecker : Bean 'transactionInterceptor' of type [class org.springframework.transaction.interceptor.TransactionInterceptor] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
-2015-04-15 09:09:10.797  INFO 71016 --- [           main] trationDelegate$BeanPostProcessorChecker : Bean 'org.springframework.transaction.config.internalTransactionAdvisor' of type [class org.springframework.transaction.interceptor.BeanFactoryTransactionAttributeSourceAdvisor] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
-2015-04-15 09:09:11.248  INFO 71016 --- [           main] s.b.c.e.t.TomcatEmbeddedServletContainer : Tomcat initialized with port(s): 0 (http)
-2015-04-15 09:09:11.488  INFO 71016 --- [           main] o.apache.catalina.core.StandardService   : Starting service Tomcat
-2015-04-15 09:09:11.490  INFO 71016 --- [           main] org.apache.catalina.core.StandardEngine  : Starting Servlet Engine: Apache Tomcat/8.0.20
-2015-04-15 09:09:11.644  INFO 71016 --- [ost-startStop-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
-2015-04-15 09:09:11.644  INFO 71016 --- [ost-startStop-1] o.s.web.context.ContextLoader            : Root WebApplicationContext: initialization completed in 2868 ms
-2015-04-15 09:09:12.429  INFO 71016 --- [ost-startStop-1] o.s.b.c.e.ServletRegistrationBean        : Mapping servlet: 'dispatcherServlet' to [/]
-2015-04-15 09:09:12.435  INFO 71016 --- [ost-startStop-1] o.s.b.c.embedded.FilterRegistrationBean  : Mapping filter: 'characterEncodingFilter' to: [/*]
-2015-04-15 09:09:12.435  INFO 71016 --- [ost-startStop-1] o.s.b.c.embedded.FilterRegistrationBean  : Mapping filter: 'hiddenHttpMethodFilter' to: [/*]
-2015-04-15 09:09:13.030  INFO 71016 --- [           main] j.LocalContainerEntityManagerFactoryBean : Building JPA container EntityManagerFactory for persistence unit 'default'
-2015-04-15 09:09:14.415  INFO 71016 --- [           main] s.w.s.m.m.a.RequestMappingHandlerAdapter : Looking for @ControllerAdvice: org.springframework.boot.context.embedded.AnnotationConfigEmbeddedWebApplicationContext@3f15f21b: startup date [Wed Apr 15 09:09:08 CEST 2015]; root of context hierarchy
-2015-04-15 09:09:14.487  INFO 71016 --- [           main] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped "{[/articles],methods=[GET],params=[],headers=[],consumes=[],produces=[application/json],custom=[]}" onto public java.util.List<com.acme.app.Article> com.acme.app.ArticleResource.getArticles()
-2015-04-15 09:09:14.490  INFO 71016 --- [           main] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped "{[/error],methods=[],params=[],headers=[],consumes=[],produces=[text/html],custom=[]}" onto public org.springframework.web.servlet.ModelAndView org.springframework.boot.autoconfigure.web.BasicErrorController.errorHtml(javax.servlet.http.HttpServletRequest)
-2015-04-15 09:09:14.490  INFO 71016 --- [           main] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped "{[/error],methods=[],params=[],headers=[],consumes=[],produces=[],custom=[]}" onto public org.springframework.http.ResponseEntity<java.util.Map<java.lang.String, java.lang.Object>> org.springframework.boot.autoconfigure.web.BasicErrorController.error(javax.servlet.http.HttpServletRequest)
-2015-04-15 09:09:14.524  INFO 71016 --- [           main] o.s.w.s.handler.SimpleUrlHandlerMapping  : Mapped URL path [/**] onto handler of type [class org.springframework.web.servlet.resource.ResourceHttpRequestHandler]
-2015-04-15 09:09:14.525  INFO 71016 --- [           main] o.s.w.s.handler.SimpleUrlHandlerMapping  : Mapped URL path [/webjars/**] onto handler of type [class org.springframework.web.servlet.resource.ResourceHttpRequestHandler]
-2015-04-15 09:09:14.578  INFO 71016 --- [           main] o.s.w.s.handler.SimpleUrlHandlerMapping  : Mapped URL path [/**/favicon.ico] onto handler of type [class org.springframework.web.servlet.resource.ResourceHttpRequestHandler]
-2015-04-15 09:09:14.773  INFO 71016 --- [           main] s.b.c.e.t.TomcatEmbeddedServletContainer : Tomcat started on port(s): 51405 (http)
-2015-04-15 09:09:14.776  INFO 71016 --- [           main] c.i.rt.execution.junit.JUnitStarter      : Started JUnitStarter in 6.401 seconds (JVM running for 7.246)
-2015-04-15 09:09:14.785  INFO 71016 --- [           main] com.acme.app.SpringIntegrationTest       : L'application tourne sur le port : 51405
-2015-04-15 09:09:14.788  INFO 71016 --- [       Thread-1] ationConfigEmbeddedWebApplicationContext : Closing org.springframework.boot.context.embedded.AnnotationConfigEmbeddedWebApplicationContext@3f15f21b: startup date [Wed Apr 15 09:09:08 CEST 2015]; root of context hierarchy
-2015-04-15 09:09:14.795  INFO 71016 --- [       Thread-1] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
+import com.jayway.restassured.http.ContentType;
+import com.jayway.restassured.module.mockmvc.RestAssuredMockMvc;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-Process finished with exit code 0
+import java.util.ArrayList;
+import java.util.List;
+
+import static com.jayway.restassured.module.mockmvc.RestAssuredMockMvc.when;
+import static org.hamcrest.CoreMatchers.containsString;
+
+public class RestAssuredMockMvcTest {
+
+    @Mock
+    private ArticleRepository articleRepository;
+
+    @InjectMocks
+    private ArticleResource articleResource;
+
+    @Before
+    public void setUp() throws Exception {
+        MockitoAnnotations.initMocks(this);
+
+        RestAssuredMockMvc.standaloneSetup(articleResource);
+
+        List<Article> articles = new ArrayList<>();
+        articles.add(ArticleFactory.newArticle("Article 1"));
+        articles.add(ArticleFactory.newArticle("Article 2"));
+        articles.add(ArticleFactory.newArticle("Article 3"));
+        Mockito.when(articleRepository.findAll()).thenReturn(articles);
+    }
+
+    @Test
+    public void testGetArticles() throws Exception {
+        when()
+                .get("/articles").
+        then()
+                .body(containsString("Article 1"))
+                .body(containsString("Article 2"))
+                .body(containsString("Article 3"))
+                .assertThat()
+                .statusCode(200)
+                .contentType(ContentType.JSON).
+        extract()
+                .response()
+                .getMockHttpServletResponse()
+                .getContentAsString();
+    }
+
+}
 ```
-
-#### 2.8.4. Tests d'intégration en mode "bouchon"
-
-
-
-
-
+ 
+Nous voyons à travers ce test que nous gérons les dépendances "normalement" avec Mockito / MockMVC et que nous appelons directement REST-assured pour ce qui est de l'appel de la méthode testée et des assrtions.
