@@ -4,7 +4,7 @@ COMMIT ?= $(shell git log -1 --format=%h)
 
 APP_VERSION = ${VERSION}-${COMMIT}
 APP_NAME = nappemy-api
-ORGANISATION_NAME = nappemy
+ORGANISATION_NAME = smodou
 
 IMAGE_NAME = ${ORGANISATION_NAME}/${APP_NAME}
 IMAGE_NAME_TAG = ${IMAGE_NAME}:${APP_VERSION}
